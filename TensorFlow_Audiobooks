@@ -1,0 +1,86 @@
+import numpy as np
+import tensorflow as tf
+
+# Data
+
+npz = np.load('Audiobooks_data_train.npz')
+
+train_inputs = npz['inputs'].astype(float)
+train_targets = npz['targets'].astype(int)
+
+npz = np.load('Audiobooks_data_validation.npz')
+
+validation_inputs, validation_targets = npz['inputs'].astype(float), npz['targets'].astype(int)
+
+npz = np.load('Audiobooks_data_test.npz')
+
+test_inputs, test_targets = npz["inputs"].astype(float), npz['targets'].astype(int)
+
+#Unlike the MNIST example, our train, validation and test is simply in array form. 
+
+# Model
+# Outline, Optimizers, loss early stopping and training
+
+input_size = 10
+output_size = 2
+hidden_layer_size = 50
+
+model = tf.keras.Sequential([
+                            tf.keras.layers.Dense(hidden_layer_size, activation='relu'),
+                            tf.keras.layers.Dense(hidden_layer_size, activation='relu'),
+                            tf.keras.layers.Dense(output_size, activation='softmax')
+                            ])   
+
+model.compile(optimizer = 'adam', loss = 'sparse_categorical_crossentropy',metrics=['accuracy'])
+
+batch_size = 100
+
+max_epochs = 100
+
+# model.fit(train_inputs, 
+#           train_targets,
+#           batch_size=batch_size,
+#           epochs = max_epochs,
+#           validation_data = (validation_inputs, validation_targets),
+#           verbose = 2
+#          )
+
+
+# Seting an early stopping mechanism
+
+# We are doing this because we are overfitting and the validation loss was sometimes increasing so it is overfitting. 
+# We didn't use this on the MNIST because it was very well prepocessed. This time we need an early stopping mechanism
+
+early_stopping = tf.keras.callbacks.EarlyStopping(patience = 2) # by default, this object will monitor the validation loss and stop the training process 
+                                                    # the first time the calidation loss starts increasing
+                                                    # Sometimes the loss isn't too much so we may prefer to let 1 or 2 validation increases slide
+                                                    # So we use 'patience' in the EarlyStopping() function
+model.fit(train_inputs, 
+          train_targets,
+          batch_size=batch_size,
+          epochs = max_epochs,
+          callbacks = [early_stopping],
+          validation_data = (validation_inputs, validation_targets),
+          verbose = 2
+         )
+
+# Test the model
+
+# model.evaluate() returns the loss value and metrics values for the model in 'test mode'
+
+test_loss, test_accuracy = model.evaluate(test_inputs,test_targets)
+
+print('\nTest loss: {0:.2f}. Test accuracy: {1: .2f}%'.format(test_loss, test_accuracy*100.))
+
+
+
+
+
+
+
+
+
+
+
+
+
